@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Andrew Ngo
+# Author: Andrew Ngo, Quantum Science and Engineering Lab
+#
+# Load the lock-in bitstream at boot, after Red Pitaya's own startup has
+# loaded the stock image. Install to /etc/systemd/system/ and enable:
+#   systemctl daemon-reload && systemctl enable lockin_fpga
+# Disable with `systemctl disable lockin_fpga`, or offline by creating
+# /opt/redpitaya/fpga/lockin/DISABLE (FAT partition, editable from a PC).
+
+[Unit]
+Description=Load lock-in FPGA bitstream
+After=redpitaya_startup.service redpitaya_nginx.service jupyter.service network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/sh /opt/redpitaya/fpga/lockin/load_lockin.sh
+RemainAfterExit=yes
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target

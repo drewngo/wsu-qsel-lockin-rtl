@@ -1,0 +1,15 @@
+__pycache__/
+.venv/
+.pytest_cache/
+
+/vectors/
+
+tb/build/
+vivado/build/
+vivado/project/
+.Xil/
+*.jou
+*.log
+*.str
+clockInfo.txt
+dfx_runtime.txt
