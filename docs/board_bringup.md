@@ -20,7 +20,7 @@ of `rp_lockin_top.sv` and rebuild (about 5 minutes).
 | `NCO_INC_P` | `NCO_INC` (300.0023 Hz) | f_mod = NCO_INC_P x 125 MHz / 2^32; set by `F_MOD` in `model/params.py` |
 | `COIL_AMP` | 13885 | OUT1 amplitude, 65535 = full scale; on this board 13885 measured as 0.5 Vpp (32768 gave 1.18 Vpp) |
 | `OUT_SEL` | `SEL_I1` | OUT2 source: `SEL_I1`, `SEL_Q1`, `SEL_X2`, `SEL_Y2`, `SEL_DC`, `SEL_XD` |
-| `OUT_GAIN`, `OUT_SHIFT` | 4, 0 | OUT2 = source x gain >> shift (DAC full scale = 8191) |
+| `OUT_GAIN`, `OUT_SHIFT` | 4, `IQ_FRAC_BITS` (12) | OUT2 = source x gain >> shift (DAC full scale = 8191). I/Q carry 12 fraction bits, so a shift of 12 means whole counts |
 | `OUT_OFFSET` | 3470 | added after scaling, DAC codes (3470 is about +0.5 V on this board) |
 | `PHASE_DEG` | 90 | reference phase rotation, degrees; set so the signal lands in I1 |
 
@@ -49,6 +49,15 @@ Notes:
   the driver silently ignores.
 - `/tmp` is cleared on reboot.
 
+## Time constant
+
+The output filter is 2 stages with a time constant of 2^`LPF_K` / 25 kHz each
+(`LPF_K` = 15: 1.31 s, set in `model/params.py`). It sets the noise bandwidth
+(about 0.1 Hz) and the response time: after any change in field, frequency or
+input, wait about 5-10 s for OUT2 to settle. A field sweep needs a wait per
+point of several time constants, or forward and reverse sweeps will shift
+apart.
+
 ## What to look for
 
 | Check | Expected | If not |
@@ -58,7 +67,7 @@ Notes:
 | OUT1 on a scope (high-Z) | 300 Hz sine, about 1 Vpp | if it appears on OUT2 instead, the DAC channels are swapped: tell me |
 | OUT2, IN1 open | near 0 V, LEDs 4-7 off | |
 | OUT2, OUT1 cabled to IN1 | steady DC level, up to about +/-0.9 V; LEDs 4-7 show its size | |
-| Function generator, 300.5 Hz, 0.5 V into IN1 | OUT2 swings slowly at 0.5 Hz (the beat) | |
+| Function generator, 300.05 Hz, 5 mV amplitude into IN1 | OUT2 swings slowly around 0.5 V, one cycle every 20 s (the 0.05 Hz beat) | Faster beats are filtered out: at 0.5 Hz the 1.31 s filter passes only 6% |
 
 Notes:
 - IN1 jumper on LV (+/-1 V). Stay inside that range.

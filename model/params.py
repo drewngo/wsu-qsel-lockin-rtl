@@ -12,8 +12,8 @@ Signal chain (one ADC channel):
    -> CIC (order 3, R=1250)      -> 18b @100 kS/s
    -> FIR comp + decimate by 4   -> 18b @25 kS/s      ("x_d", decimated rate)
    -> DC blocker (1-pole HP)     -> 19b
-   -> mixers vs NCO 1f/2f LUT    -> 24b  I1, Q1, X2, Y2
-   -> 3-stage 1-pole IIR LPF     -> 24b
+   -> mixers vs NCO 1f/2f LUT    -> 36b  I1, Q1, X2, Y2 (12 fraction bits kept)
+   -> 2-stage 1-pole IIR LPF     -> 36b  (time constant 1.31 s per stage)
    -> every PI_DECIM samples (loop rate 1 kHz):
         lock detect, normalize (I1/X2), kappa scale, PI -> synth command
    -> CORDIC on (I1, Q1) for magnitude/phase status
@@ -45,11 +45,12 @@ class LockinConfig:
     nco_bits: int = 32          # phase accumulator
     lut_addr_bits: int = 10     # full-wave sine LUT, 1024 entries
     lut_bits: int = 16          # LUT amplitude 2^15 - 1
-    mix_shift: int = 15         # mixer product >> mix_shift
-    mix_bits: int = 24          # mixer output (saturated)
+    mix_shift: int = 3          # mixer product >> mix_shift; 15 - mix_shift fraction bits kept
+    mix_bits: int = 36          # mixer output and I/Q width (saturated)
     dc_k: int = 10              # DC blocker pole: alpha = 2^-dc_k
-    lpf_k: int = 10             # LPF pole: alpha = 2^-lpf_k (~3.9 Hz at 25 kS/s)
-    lpf_stages: int = 3
+    lpf_k: int = 15             # LPF pole: alpha = 2^-lpf_k; time constant 2^lpf_k / fs_dec
+                                #   (14: 0.66 s, 15: 1.31 s, 16: 2.62 s per stage)
+    lpf_stages: int = 2         # 2 stages = 12 dB/octave, like the bench lock-in
     cordic_iters: int = 16
     cordic_guard: int = 2       # extra LSBs inside the CORDIC
     phase_bits: int = 16        # CORDIC phase output, full turn = 2^phase_bits
@@ -99,6 +100,16 @@ class LockinConfig:
     @property
     def fs_dec(self):
         return self.fs_adc / self.r_total
+
+    @property
+    def lpf_tau(self):
+        """LPF time constant per stage, seconds."""
+        return 2 ** self.lpf_k / self.fs_dec
+
+    @property
+    def iq_frac_bits(self):
+        """Fraction bits I/Q carry relative to a mixer that keeps no extra bits."""
+        return self.lut_bits - 1 - self.mix_shift
 
     @property
     def fs_loop(self):

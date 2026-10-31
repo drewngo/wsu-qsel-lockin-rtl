@@ -9,7 +9,12 @@
 //   OUT2 <- selected lock-in output (OUT_SEL, scaled by OUT_GAIN >> OUT_SHIFT)
 //   LED0 heartbeat (~1 Hz)     LED1 PLL locked
 //   LED2 I1 < 0                LED3 Q1 < 0
-//   LED4..7 |I1| bar: >= 1k, 4k, 8k, 16k
+//   LED4..7 |I1| bar: >= 1k, 4k, 8k, 16k whole counts (about 17, 69, 137,
+//           275 mV of in-phase f_mod amplitude at IN1, LV jumper)
+//
+// I1/Q1/X2/Y2 carry IQ_FRAC_BITS (12) fraction bits below the whole count, so
+// OUT_SHIFT includes them: OUT_SHIFT = IQ_FRAC_BITS + n divides whole counts
+// by 2^n. On this board OUT2 moves 1 V per about 6940 DAC codes.
 //
 // PHASE_DEG rotates the demodulation reference. Rotating by +90 moves what was
 // in Q1 into I1 (new I1 = old Q1, new Q1 = -old I1). Set it so the signal sits
@@ -17,9 +22,11 @@
 // resonance. The 2f reference follows automatically (2 x phase - 90).
 //
 // Loopback test: cable OUT1 to IN1. With COIL_AMP = 32768 (about 0.5 V) the
-// demodulated amplitude sqrt(I1^2 + Q1^2) is about 30k, so OUT2 = I1 / 4 sits
-// within +/-0.9 V; how it splits between I1 and Q1 depends on the cable and
-// pipeline phase.
+// demodulated amplitude sqrt(I1^2 + Q1^2) is about 30k whole counts, so with
+// OUT_GAIN = 1, OUT_SHIFT = IQ_FRAC_BITS + 2 OUT2 sits within +/-0.9 V; how it
+// splits between I1 and Q1 depends on the cable and pipeline phase. The
+// filter time constant is LPF_STAGES x 2^LPF_K / 25 kHz, so allow ~5-10 s to
+// settle after any change.
 
 module rp_lockin_top
   import lockin_pkg::*;
@@ -27,8 +34,8 @@ module rp_lockin_top
   parameter logic [NCO_BITS-1:0] NCO_INC_P  = NCO_INC,         // f_mod from params.py (300.0023 Hz)
   parameter int                  COIL_AMP   = 13885,           // OUT1 amplitude; 13885 = 0.5 Vpp measured on this board (32768 gave 1.18 Vpp)
   parameter int                  OUT_SEL    = SEL_I1,
-  parameter int                  OUT_GAIN   = 4,               // 0.5V 1, 100mV 9, 30mV 59, 10mV 11, 1mV 110
-  parameter int                  OUT_SHIFT  = 0,               // 0.5V 2, 100mV 3, 30mV  4, 10mV  0, 1mV   0
+  parameter int                  OUT_GAIN   = 4,               // OUT2 = I1 x OUT_GAIN >> OUT_SHIFT
+  parameter int                  OUT_SHIFT  = IQ_FRAC_BITS,    // IQ_FRAC_BITS = whole counts x OUT_GAIN
   parameter int                  OUT_OFFSET = 3470,
   parameter int                  PHASE_DEG  = 90               // reference phase, whole degrees
 ) (
@@ -133,12 +140,16 @@ module rp_lockin_top
   );
 
   // ---------------- LEDs
+  localparam logic [MIX_BITS-1:0] LED_T1 = MIX_BITS'(1024)  << IQ_FRAC_BITS;
+  localparam logic [MIX_BITS-1:0] LED_T2 = MIX_BITS'(4096)  << IQ_FRAC_BITS;
+  localparam logic [MIX_BITS-1:0] LED_T3 = MIX_BITS'(8192)  << IQ_FRAC_BITS;
+  localparam logic [MIX_BITS-1:0] LED_T4 = MIX_BITS'(16384) << IQ_FRAC_BITS;
   logic [26:0]         beat;
   logic [MIX_BITS-1:0] i1_abs;
   always_ff @(posedge clk) begin
     beat   <= beat + 1'b1;
     i1_abs <= lia_i1[MIX_BITS-1] ? -lia_i1 : lia_i1;
-    led_o  <= {i1_abs >= 16384, i1_abs >= 8192, i1_abs >= 4096, i1_abs >= 1024,
+    led_o  <= {i1_abs >= LED_T4, i1_abs >= LED_T3, i1_abs >= LED_T2, i1_abs >= LED_T1,
                lia_q1[MIX_BITS-1], lia_i1[MIX_BITS-1], locked, beat[26]};
   end
 

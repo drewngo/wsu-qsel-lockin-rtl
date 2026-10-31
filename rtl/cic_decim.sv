@@ -27,7 +27,7 @@ module cic_decim
 );
 
   localparam logic signed [W:0] RND    = (W+1)'(1) <<< (SHIFT - 1);
-  localparam logic signed [W:0] OUT_HI = (W+1)'((1 << (OUT_W - 1)) - 1);
+  localparam logic signed [W:0] OUT_HI = ((W+1)'(1) <<< (OUT_W - 1)) - (W+1)'(1);
   localparam logic signed [W:0] OUT_LO = -((W+1)'(1) <<< (OUT_W - 1));
 
   // ---------------- integrators (input rate)

@@ -27,7 +27,7 @@ module coil_nco
   localparam int SH  = COIL_AMP_BITS + LUT_BITS - DAC_BITS;
   localparam logic [NCO_BITS-1:0] A_RND = NCO_BITS'(1) << (ASH - 1);
   localparam logic signed [PW-1:0] P_RND = PW'(1) <<< (SH - 1);
-  localparam logic signed [PW-1:0] D_HI  = PW'((1 << (DAC_BITS - 1)) - 1);
+  localparam logic signed [PW-1:0] D_HI  = (PW'(1) <<< (DAC_BITS - 1)) - PW'(1);
   localparam logic signed [PW-1:0] D_LO  = -(PW'(1) <<< (DAC_BITS - 1));
 
   logic [NCO_BITS-1:0]        acc, p;

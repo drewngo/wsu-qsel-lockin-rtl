@@ -12,8 +12,8 @@ IN1 (ADC, 14 b, 125 MS/s)
  -> 63-tap compensating FIR, /4    18 b @ 25 kS/s
  -> DC blocker
  -> 1f / 2f mixers (sine LUT, 1024 x 16 b)
- -> 3-stage one-pole low-pass (~3.9 Hz)
- -> I1, Q1 (1f) and X2, Y2 (2f)
+ -> 2-stage one-pole low-pass, time constant 1.31 s per stage (12 dB/oct)
+ -> I1, Q1 (1f) and X2, Y2 (2f), 36 b with 12 fraction bits
  -> OUT2: selected output, scaled and offset
 
 NCO at f_mod (300.0023 Hz) -> OUT1: coil modulation
@@ -70,12 +70,12 @@ Each block is compared sample for sample against `model/lockin_fixed.py`:
 
 | Resource | Used | Available |
 | --- | --- | --- |
-| LUTs | 1,671 (9.5%) | 17,600 |
-| Flip-flops | 2,555 (7.3%) | 35,200 |
-| DSP48 | 4 (5%) | 80 |
+| LUTs | 1,743 (9.9%) | 17,600 |
+| Flip-flops | 2,705 (7.7%) | 35,200 |
+| DSP48 | 5 (6.3%) | 80 |
 | Block RAM | 0.5 (0.8%) | 60 |
 
-Setup slack +0.87 ns, hold slack +0.02 ns.
+Setup slack +0.84 ns, hold slack +0.02 ns.
 
 ## Acknowledgements
 

@@ -14,8 +14,9 @@
 //
 // One multiplier and one LUT port are shared across the four channels. Each
 // LPF stage update is split over four clocks to meet 125 MHz, so a sample
-// takes 66 clocks. Inputs must be at least 72 clocks apart (5000 in the real
-// design). Outputs update together, one cycle before out_valid.
+// takes 2 + 4 * (4 + 4 * LPF_STAGES) clocks (50 for 2 stages). Inputs must
+// be at least that many clocks apart (5000 in the real design). Outputs
+// update together, one cycle before out_valid.
 
 module lockin_core
   import lockin_pkg::*;
@@ -55,7 +56,7 @@ module lockin_core
   localparam logic [AB-1:0]        QUARTER = AB'(1) << (AB - 2);
   localparam logic signed [DW-1:0] DC_RND  = DW'(1) <<< (DC_K - 1);
   localparam logic signed [PW-1:0] M_RND   = PW'(1) <<< (MIX_SHIFT - 1);
-  localparam logic signed [PW-1:0] M_HI    = PW'((1 << (MW - 1)) - 1);
+  localparam logic signed [PW-1:0] M_HI    = (PW'(1) <<< (MW - 1)) - PW'(1);
   localparam logic signed [PW-1:0] M_LO    = -(PW'(1) <<< (MW - 1));
   localparam logic signed [SW-1:0] S_RND   = SW'(1) <<< (LPF_K - 1);
 
@@ -191,7 +192,7 @@ module lockin_core
 
   // synthesis translate_off
   always @(posedge clk) if (rst_n && in_valid && state != S_IDLE)
-    $error("lockin_core: input arrived while busy; inputs must be >= 72 clocks apart");
+    $error("lockin_core: input arrived while busy; inputs must be >= 2 + 4*(4 + 4*LPF_STAGES) clocks apart");
   // synthesis translate_on
 
 endmodule

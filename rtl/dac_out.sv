@@ -35,7 +35,7 @@ module dac_out
 );
 
   localparam int PW = MW + OUT_GAIN_BITS + 1;
-  localparam logic signed [PW-1:0] D_HI = PW'((1 << (DAC_BITS - 1)) - 1);
+  localparam logic signed [PW-1:0] D_HI = (PW'(1) <<< (DAC_BITS - 1)) - PW'(1);
   localparam logic signed [PW-1:0] D_LO = -(PW'(1) <<< (DAC_BITS - 1));
 
   // Pipeline, one operation per clock:

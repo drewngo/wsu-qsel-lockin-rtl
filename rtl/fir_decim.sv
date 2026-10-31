@@ -28,7 +28,7 @@ module fir_decim
   localparam int PW = W + CW;                    // product
   localparam int AW = PW + $clog2(TAPS);         // accumulator
   localparam logic signed [AW-1:0] RND    = AW'(1) <<< (CW - 2);
-  localparam logic signed [AW-1:0] OUT_HI = AW'((1 << (W - 1)) - 1);
+  localparam logic signed [AW-1:0] OUT_HI = (AW'(1) <<< (W - 1)) - AW'(1);
   localparam logic signed [AW-1:0] OUT_LO = -(AW'(1) <<< (W - 1));
 
   logic signed [W-1:0]          taps [TAPS];

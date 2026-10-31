@@ -14,11 +14,11 @@ package lockin_pkg;
   localparam int NCO_BITS = 32;
   localparam int LUT_ADDR_BITS = 10;
   localparam int LUT_BITS = 16;
-  localparam int MIX_SHIFT = 15;
-  localparam int MIX_BITS = 24;
+  localparam int MIX_SHIFT = 3;
+  localparam int MIX_BITS = 36;
   localparam int DC_K = 10;
-  localparam int LPF_K = 10;
-  localparam int LPF_STAGES = 3;
+  localparam int LPF_K = 15;
+  localparam int LPF_STAGES = 2;
   localparam int CORDIC_ITERS = 16;
   localparam int CORDIC_GUARD = 2;
   localparam int PHASE_BITS = 16;
@@ -39,6 +39,7 @@ package lockin_pkg;
   localparam int CIC_WIDTH = 45;
   localparam int CIC_SHIFT = 27;
   localparam int R_TOTAL = 5000;
+  localparam int IQ_FRAC_BITS = 12;
   localparam logic [31:0] NCO_INC = 32'd10308;   // per fabric clock
   localparam logic [31:0] NCO_STEP = 32'd51540000;  // per decimated sample
   // DAC2 source select
